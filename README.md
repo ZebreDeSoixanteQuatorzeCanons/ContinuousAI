@@ -29,6 +29,7 @@ In the menu **AI > Set AI Model**, select the LLM you want ContinuousAI to use.
 To generate suggestions, you can:  
 - Click **AI > Compute Suggestions with AI**, or  
 - Right-click a model element in the design panel and choose **Compute a new suggestion with AI**.
+  
 Depending on the selected interaction mechanism (configurable in the **AI** menu), suggestions can also be triggered when you:  
 - Hover your mouse pointer over a model component for 2 seconds, or  
 - Modify the model directly.
