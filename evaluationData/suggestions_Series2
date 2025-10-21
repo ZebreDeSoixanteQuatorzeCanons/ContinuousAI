@@ -1,0 +1,613 @@
++---------------------+
+! REQUIREMENT DIAGRAM !
++---------------------+
+
+----------
+RD_1
+----------
+
+OVERALL DIAGRAM
+1. OSS : 10051 ms
+-----------------
+
+	Missing presence sensor for machine 3/Structure: The model lacks an explicit representation of the presence sensor that detects a plaquette in front of machine 3. How to solve? Add a new component (e.g., PresenceSensor_M3) with appropriate properties and link it to Machine_3 via a CONTAIN or REFINE relationship. component: Machine_3 -> KO
+
+	Missing vertical motor for machine 1 and 2/Structure: The specification mentions separate vertical motors for the pinches of machines 1 and 2, but the model only groups them under Acionneurs_M_1_et_2 without distinguishing the vertical motor. How to solve? Create distinct components VerticalMotor_M1 and VerticalMotor_M2, associate them with Machine_1 and Machine_2 respectively, and update the Acionneurs_M_1_et_2 component to include these subcomponents. component: Acionneurs_M_1_et_2 -> OK
+
+	Missing lateral motor for machine 3/Structure: The specification requires a lateral motor for the press of machine 3, but this is not captured in the model. How to solve? Introduce a component LateralMotor_M3 and link it to Machine_3, ensuring the press action can be driven laterally between the store, the belt, and the output receptacle. component: Machine_3 -> OK
+
+	Missing lateral motor for machine 1 and 2/Structure: While Acionneurs_M_1_et_2 mentions two motors, the model does not explicitly distinguish between the lateral and vertical motors for each machine. How to solve? Create LateralMotor_M1 and LateralMotor_M2 components, associate them with Machine_1 and Machine_2, and adjust Acionneurs_M_1_et_2 to include both motors. component: Acionneurs_M_1_et_2 -> OK
+
+	Missing proprioceptive sensor for machine 3/Structure: The specification specifies a proprioceptive sensor for the press position in machine 3, but the model only mentions this sensor under Machine_3 without a dedicated component. How to solve? Add a ProprioceptiveSensor_M3 component and link it to Machine_3 via a CONTAIN relationship. component: Machine_3 -> KO
+
+	Missing proprioceptive sensor for machine 1 and 2/Structure: The specification requires proprioceptive sensors for the pinches of machines 1 and 2, but these are not represented in the model. How to solve? Introduce ProprioceptiveSensor_M1 and ProprioceptiveSensor_M2 components and connect them to Machine_1 and Machine_2 respectively. component: Machine_1_et_2 -> KO
+
+	Missing belt motor reference/Structure: The model lists an Actionneur_tapis but does not explicitly link the belt motor to the Tapis component in a clear hierarchical manner. How to solve? Ensure that Actionneur_tapis is a subcomponent of Tapis (e.g., via a CONTAIN or REFINE relationship) and clarify its role as the belt drive motor. component: Tapis -> KO
+
+	Missing restriction logic for forbidden actions/Structure: The specification explicitly forbids certain actions (e.g., machine 1 stacking, machine 2 placing a filet when no plaquette is present), but the model lacks behavioral constraints or safety rules. How to solve? Define constraint models or state machines that enforce these forbidden conditions, and associate them with the relevant machines via behavior links. component: Machine_1 -> KO
+
+	Missing coordination rule for belt movement/Structure: The specification states that the belt stops until all three machines finish, then moves. This timing logic is not captured. How to solve? Add a state machine or control flow model that synchronizes Belt movement with completion signals from Machine_1, Machine_2, and Machine_3. component: Tapis -> KO
+
+	Missing inventory store components/Structure: The specification mentions stores for plaquettes, filets, and films, but the model does not include these storage elements. How to solve? Create Store_Plaquettes, Store_Filets, and Store_Films components and connect them to the respective machines as supply sources. component: Machine_1 -> OK
+
+
+OVERALL DIAGRAM
+2. QWEN : 35486 ms
+---------------------
+
+	Missing vertical motor for Machine 1 and 2/Structure: The system specification mentions that machines 1 and 2 have a vertical motor for pince movement, but this is not captured in the model's description of actionneurs. How to solve? Add a specific reference to the vertical motor actionner for both Machine_1 and Machine_2 in the model component: Acionneurs_M_1_et_2 -> OK
+
+	Missing film plastic storage for Machine 3/Structure: The system specification indicates that machine 3 is fed by a store containing plastic films, but this information is not present in the model. How to solve? Add an element representing the film storage for Machine_3 in the model component: Machine_3 -> OK
+
+	Missing salmon filet storage for Machine 2/Structure: The system specification states that machine 2 is fed by a store containing salmon fillets, which is not mentioned in the model. How to solve? Include a reference to the salmon storage for Machine_2 in the model component: Machine_2 -> OK
+
+	Missing plastic tray storage for Machine 1/Structure: The system specification indicates that machine 1 is fed by a store containing plastic trays, which is not reflected in the model. How to solve? Add an element representing the tray storage for Machine_1 in the model component: Machine_1 -> OK
+
+	Missing output receptacle for Machine 3/Structure: The system specification mentions that machine 3 deposits finished products into an output receptacle, which is not captured in the model. How to solve? Add a reference to the output receptacle for Machine_3 in the model component: Machine_3 -> OK
+
+	Missing constraint on placing filet without tray/Structure: The system specification forbids machine 2 from placing a salmon fillet if no tray is present, which is not addressed in the model's behavior. How to solve? Add a constraint rule in the controller that prevents Machine_2 from operating when no tray is detected component: Controleur_Machines -> OK
+
+	Missing constraint on placing film without tray/Structure: The system specification forbids machine 3 from sealing a plastic film if no tray is present, which is not modeled. How to solve? Add a constraint rule in the controller that prevents Machine_3 from operating when no tray is detected component: Controleur_Machines -> OK
+
+	Missing constraint on stacking trays/Structure: The system specification forbids machine 1 from placing a tray on top of another tray, which is not modeled. How to solve? Add a constraint rule in the controller that prevents Machine_1 from operating when a tray is already present component: Controleur_Machines -> OK
+
+	Missing coordination between tapis movement and machine operations/Structure: The system specification requires the conveyor belt to stop until all machines complete their current task, then advance. This coordination is not explicitly modeled. How to solve? Add a control logic element that manages synchronized start/stop of tapis with machine operations component: Controleur_Machines -> KO
+
+	Missing vertical motor for Machine 3/Structure: The system specification mentions that machine 3 has a vertical motor for press movement, but this is not captured in the model. How to solve? Add reference to the vertical motor actionner for Machine_3 in the model component: Actionners_M_3 -> OK
+
+
+COMPONENT MACHINE_3
+1. OSS : 3000 ms
+-----------------
+
+	Add presence‑check before sealing/Structure: The current model for Machine_3 specifies a proximity sensor for the presence of a plaquette, but it does not enforce that the sealing action is only initiated when a plaquette is detected. This omission can lead to the controller issuing a seal command even when no plaquette is present, violating constraint 3 in the system specification. How to solve? Introduce an explicit pre‑condition check in Machine_3’s control logic: before activating the press actuator, read the ‘presence of plaquette’ sensor and only proceed if it reports true. Additionally, model a safety state that aborts or rejects seal commands when the sensor is false. -> OK
+
+
+COMPONENT MACHINE_3
+2. QWEN : 9200 ms
+---------------------
+
+	Missing Safety Constraint for Machine 3/Structure: The model does not explicitly represent the safety constraint that Machine 3 must not seal a film on the tapis if no plaquette is present in front of it, as specified in the system specification. How to solve? Add a behavioral rule or constraint to the model that ensures Machine 3 checks for the presence of a plaquette before executing the sealing action. This can be implemented through a conditional logic in the controller's behavior that reads the sensor signal from Machine 3 and prevents the sealing operation if no plaquette is detected. -> OK
+
+
+
+--------
+RD_2
+--------
+
+OVERALL DIAGRAM
+1. OSS : 11432 ms
+-----------------
+
+	Missing Machine Specific Actions/Structure: The model does not capture the distinct actions of each machine (placing plates, placing fish filet, sealing and depositing). These are critical for correct sequencing. How to solve? Add separate functional requirements or sub-components for Machine1Action, Machine2Action, and Machine3Action that detail the specific tasks performed by each machine. component: Machinerie -> OK
+
+	Tirette de Tapis Stop Condition/Structure: The requirement to stop the conveyor until all three machines finish their current task is missing. How to solve? Introduce a functional requirement (e.g., ConveyorStopCondition) that specifies the logic for halting and restarting the conveyor based on machine completion status. component: Tapis -> OK
+
+	Machine Proprioceptive Sensors/Structure: The model lacks explicit representation of proprioceptive sensors that provide position data for the grippers and presses. How to solve? Add sensor components (e.g., PincePositionSensor, PressePositionSensor) linked to their respective machines and include them in the system architecture. component: Capteurs -> OK
+
+	Presence Sensors/Structure: Sensors that detect the presence of a plate or fish filet before each machine are not modeled. How to solve? Create components such as PlatePresenceSensor and FiletPresenceSensor, associate them with Machine1, Machine2, and Machine3, and define their interactions in the control logic. component: Capteurs -> OK
+
+	Actionneur Types/Structure: The model does not differentiate between the various actuators (gripper motors, vertical lift motors, press). How to solve? Define distinct actuator components for each function (e.g., GripperMotor, LiftMotor, PressActuator) and link them to the relevant machines. component: Actionneurs -> OK
+
+	Inventory Management for Stores/Structure: The requirement that machines are fed from stores of plates, fish filets, and plastic film is missing. How to solve? Add a storage management component (e.g., PlateStore, FiletStore, FilmStore) and include inventory monitoring in the control logic to prevent operations when stores are empty. component: Machinerie -> OK
+
+	Forbidden Operations/Structure: The model does not specify constraints preventing stacking plates, placing filets without a plate, or sealing without a plate. How to solve? Introduce safety rules (e.g., NoPlateOnPlate, FiletOnlyOnPlate, SealOnlyWithPlate) as part of the control logic and enforce them via exception handling. component: LogicielControleChaine -> OK
+
+	Parallel Execution Management/Structure: The system's parallel operation of machines and conveyor is not captured. How to solve? Model a concurrency controller that schedules machine actions and conveyor movement, ensuring proper synchronization. component: LogicielControleChaine -> OK
+
+	Error Handling for Sensor Failures/Structure: The model only references a generic ErrorHandler but lacks specifics on handling sensor or actuator failures. How to solve? Define error scenarios (e.g., SensorFailure, ActuatorMalfunction) and corresponding recovery actions within the ErrorHandler component. component: ErrorHandler -> OK
+
+	Signal Sonore Trigger Conditions/Structure: The model does not state when the audible signal should be emitted (e.g., at start, stop, or error). How to solve? Add conditions for SignalSonore activation tied to key events in the control flow. component: SignalSonore -> OK
+
+
+OVERALL DIAGRAM
+2. QWEN : 18349 ms
+---------------------
+
+	Missing Machine Specific Behaviors/Structure: The model does not capture the specific behaviors of each machine (1, 2, and 3) including their sequential operation and interaction with the conveyor belt. How to solve? Add detailed behavioral specifications for each machine that describe their individual operations, positioning requirements, and coordination with other machines and the conveyor belt. component: Machinerie -> OK
+
+	Missing Conveyor Belt Control/Structure: The model does not specify how the conveyor belt is controlled, particularly its stop/start behavior in response to machine operations. How to solve? Include specific requirements for conveyor control logic that describes when and how it stops/starts based on machine processing states. component: Tapis -> OK
+
+	Missing Safety Constraints/Structure: The model does not capture the safety constraints preventing operations on empty surfaces (e.g., placing a filet without a plaque). How to solve? Add behavioral requirements that enforce the three safety rules from the specification to prevent invalid operations. component: Machinerie -> OK
+
+	Missing Actionneurs Details/Structure: The model's actionneurs requirement is too generic and does not specify the specific actuators for each machine (pince motors, press motor, etc.). How to solve? Break down actionneurs into detailed components with specific descriptions of each type of actuator needed by machines 1, 2, and 3. component: Actionneurs -> OK
+
+	Missing Capteurs Details/Structure: The model's capteurs requirement is too generic and does not specify the specific sensors for each machine (position sensors, presence sensors). How to solve? Break down capteurs into detailed components with specific descriptions of each sensor type needed by machines 1, 2, and 3. component: Capteurs -> OK
+
+	Missing Machine Coordination Logic/Structure: The model does not capture the coordinated operation logic between machines where all three must complete before conveyor advances. How to solve? Add behavioral requirements that specify how machine operations are synchronized and how conveyor movement depends on completion of all three machines. component: Machinerie -> OK
+
+	Missing Storage Management/Structure: The model does not include requirements for managing the storage components (plaque and salmon stores) that feed machines 1 and 2. How to solve? Add structural elements representing the storage components and their interaction with the respective machines. component: Machinerie -> OK
+
+	Missing Output Receptacle/Structure: The model does not represent the output receptacle that machine 3 deposits finished products into. How to solve? Include a structural element for the output receptacle and specify its interaction with machine 3. component: Machinerie -> OK
+
+	Missing Plastic Film Storage/Structure: The model does not include requirements for managing the plastic film storage that feeds machine 3. How to solve? Add structural elements representing the plastic film storage and its interaction with machine 3. component: Machinerie -> OK
+
+	Missing Error Handling Specificity/Structure: The model's error handling is too generic and does not specify how safety constraints violations would be handled. How to solve? Refine ErrorHandler to include specific scenarios for detecting and handling constraint violations such as attempting operations on empty surfaces. component: ErrorHandler -> OK
+
+
+COMPONENT SIGNALSONORE
+1. OSS : 6200 ms
+----------------------
+	Define Activation Conditions for Signal Sonore/Structure: The current model specifies that the software sends a sound signal (SignalSonore) but does not describe when or under which circumstances this signal should be emitted. According to the system specification, audible alerts are typically used to notify operators of errors or critical events such as prohibited actions (e.g., placing a plate on top of another). Without explicit activation conditions, the model lacks clarity and may lead to inconsistent implementation. How to solve? Extend the SignalSonore requirement by adding a set of triggering rules that map specific system states or error codes to sound alerts. For example:
+1. When an ErrorHandler detects violation of rule 1 (machine 1 places a plate on another plate), emit signal ‘error‑level‑high’.
+2. When the conveyor stops unexpectedly, emit signal ‘conveyor‑stop’. 
+Include parameters such as alert tone, duration, and repeat interval. This refinement should be linked to the ErrorHandler requirement using a REFINE or DERIVE relationship, ensuring that SignalSonore is only activated in response to defined error conditions. -> OK
+
+COMPONENT SIGNALSONORE
+2. QWEN : 3670 ms
+----------------------
+	Signal Sonore - Missing Error Condition/Structure: The requirement 'SignalSonore' does not specify under which error conditions the sound signal should be emitted, violating coherency with system specification that defines specific forbidden actions. How to solve? Modify the SignalSonore requirement to explicitly define error conditions triggering the sound signal, such as when machines attempt forbidden operations (e.g., placing a plaque on another plaque, or adding salmon filet/filet without plaquette) -> OK
+
+------
+RD_3
+------
+
+OVERALL DIAGRAM
+1. OSS : 13114 ms
+-----------------
+
+	Missing parallel execution control/Structure: The model does not capture that the controller must execute actions of all three machines and the conveyor in parallel, synchronizing them so that the conveyor stops only when all machines finish their current task. How to solve? Introduce a scheduling or concurrency mechanism in the model (e.g., a state machine for each machine with a shared stop/continue signal) and link it to the TapisRoulant behavior. component: Controleur -> KO
+
+	Missing sensor for film presence/Structure: The specification lists a sensor on machine 3 that detects whether a plaquette is present before sealing, but the model only includes generic ‘Capteur3’ without distinguishing it from other sensors. How to solve? Add a distinct sensor component (e.g., CapteurPresencePlaquetteM3) and associate it with Machine3’s behavior for verifying presence before pressing. component: Machine3 -> KO
+
+	Missing prohibition of overlapping plates/Structure: The specification forbids machine 1 from placing a plate on top of another plate. The model lacks an explicit constraint or check for this scenario. How to solve? Add a guard condition to DeplacerPlaquette that verifies the conveyor is empty (using VerifierSiTapisVide) before allowing placement, and ensure this rule is enforced in the controller logic. component: DeplacerPlaquette -> KO
+
+	Missing prohibition of salmon on empty conveyor/Structure: Machine 2 must not place a salmon filet when no plate is present. The model includes VerifierSiPresencePlaquette for Machine2 but does not enforce that the filets are only placed when a plate exists. How to solve? Add a precondition to DeplacerSaumon (or the action that places the filet) that checks VerifierSiPresencePlaquette before execution. component: DeplacerSaumon -> KO
+
+	Missing prohibition of sealing on empty conveyor/Structure: Machine 3 must not seal a film if no plate is present. The model lacks a guard for this rule. How to solve? Add a precondition to the Sealing action (ScellerPlaquette) that requires VerifierSiPresencePlaquette to be true before activating the press. component: ScellerPlaquette -> KO
+
+	Missing motor for conveyor movement/Structure: The specification mentions a motor on the conveyor, but the model does not represent this actuator or its control logic. How to solve? Add a ConveyorMotor component and link it to TapisRoulant behavior; include start/stop commands controlled by the controller. component: TapisRoulant -> KO
+
+	Missing lateral movement for Machine 3 press/Structure: Machine 3 has a motor for lateral movement between the magazine, conveyor, and receptacle, but the model only references BougerPince2 (intended for machines 1/2). How to solve? Create a distinct action (e.g., BougerPress) for Machine3’s lateral motion and associate it with Machine3. component: Machine3 -> OK
+
+	Duplicate IDs in model/Structure: Several elements share the same id (e.g., UtiliserCapteurProp2 and UtiliserCapteurProp3 both have id 9). This can cause ambiguity. How to solve? Assign unique identifiers to each element or group them into a single generic component if appropriate. component: UtiliserCapteurProp -> OK
+
+	Missing reference to vertical motor for Machine 3 press/Structure: The specification lists a vertical motor for the press, but the model does not include any action or component representing this motor. How to solve? Add an action (e.g., BougerPressVertical) linked to Machine3 and ensure it is used in the sealing process. component: Machine3 -> OK
+
+	Missing linkage between conveyor stop and machine completion/Structure: The model states that the conveyor stops when a machine performs a task, but does not specify that it resumes only after all machines finish. How to solve? Implement a synchronization point where each machine signals completion; the controller resumes the conveyor only when all signals are received. component: Controleur -> KO
+
+
+OVERALL DIAGRAM
+2. QWEN : 54782 ms
+---------------------
+
+	Missing Machine 1 Action/Structure: The model does not capture the specific requirement that machine 1 must deposit plaquettes on the conveyor belt one by one, and must check for existing plaquettes before deposition. How to solve? Add a detailed behavior specification for Machine 1 that includes checking if there is already a plaque on the tapis before placing a new one, and ensure this requirement is properly linked to the 'VerifierSiTapisVide' requirement. component: Machine1 -> KO
+
+	Missing Safety Constraint/Structure: The model does not include explicit safety constraints that prevent placing a plaque on another plaque, or placing salmon fillets without plaquettes. How to solve? Add specific non-functional requirements to the system that enforce these safety rules as behavioral constraints in addition to functional ones already present. component: Controleur -> KO
+
+	Missing Conveyor Belt Control/Structure: The model does not fully specify the conveyor belt movement behavior, particularly how it stops during operations and advances only after all machines complete their tasks. How to solve? Add a detailed specification for TapisRoulant that explicitly describes its stop/start behavior in synchronization with machine operations, ensuring this is properly linked to ArretMoteurTapis requirement. component: TapisRoulant -> KO
+
+	Inconsistent Sensor Usage/Structure: The model duplicates requirements for capteurs proprioceptifs and presence sensors with different IDs but similar descriptions, indicating inconsistencies in sensor modeling. How to solve? Consolidate the duplicated sensor references into unified components that correspond to the actual three distinct sensors described in the specification: one per machine (proprioceptive) and one per machine (presence detection). component: UtiliserCapteurProp1 -> OK
+
+	Missing Machine 3 Action Details/Structure: The model does not capture the full sequence of actions for machine 3, including retrieving film from store and depositing sealed plaquettes in output container. How to solve? Add a detailed behavior description for Machine3 that includes handling film retrieval and final product deposition in receptacle, linking to DeplacerPlaquetteFilmee and UtiliserPresse requirements. component: Machine3 -> OK
+
+	Missing Machine 2 Safety Constraint/Structure: The model lacks explicit constraint that prevents machine 2 from placing salmon on the conveyor when no plaque is present. How to solve? Add a specific safety check requirement in the system behavior to prevent this action, similar to how it's handled for Machine 1 and Machine 3. component: Machine2 -> KO
+
+	Missing Motor Control Specifications/Structure: The model does not specify the motor control mechanisms required for lateral and vertical movements of pinses/presse, including their coordination with sensors. How to solve? Include detailed specifications on how each machine's motors are controlled via the controller to ensure proper positioning in relation to sensors and workpieces. component: BougerPince1 -> KO
+
+	Missing System Integration/Structure: The model does not show clear integration between machines, conveyor belt, and controller as a unified system with shared synchronization logic. How to solve? Add structural elements that demonstrate how all components interact synchronously through the controller to ensure coordinated operation. component: Controleur -> KO
+
+	Missing Magasin Components/Structure: The model does not represent the storage areas (magasins) that supply materials to machines, which is critical for proper operation flow. How to solve? Add magasin components as system elements and link them clearly with machine input requirements via appropriate dependencies or connections. component: Machine1 -> OK
+
+	Incomplete Action Sequencing/Structure: The model fails to describe the sequential processing order of machines: first placing plaque, then salmon fillet, then sealing and final deposit. How to solve? Specify detailed behavioral flow for machine operations in sequence with proper dependencies showing that each step only occurs after previous steps complete successfully. component: Machine1 -> KO
+
+
+COMPONENT VERIFIERSIPRESENCEPLAQUETTE
+1. OSS : 6340 ms
+-------------------------------------
+
+	Add explicit precondition check for machine‑3 sealing operation/Structure: The current specification of VerifierSiPresencePlaquette only ensures that a plaquette is present before depositing salmon or before activating the press, but it does not explicitly guard against the situation where the press attempts to seal an empty position (i.e., when no plaquette has been placed in front of machine 3). This omission could allow the controller to trigger the sealing action even if the tape is empty, violating requirement 3 of the system specification. The suggestion adds a dedicated precondition check that verifies the presence of a plaquette immediately before initiating the press operation. How to solve? Modify the VerifierSiPresencePlaquette component so that it queries the sensor associated with machine 3 (UtiliserCapteur3) right before issuing the command to activate the press. If the sensor indicates no plaquette, the component should block or defer the sealing command and optionally raise an error or trigger a retry mechanism. This can be implemented by adding a boolean flag in the component’s state that is updated on each sensor event, and conditioning the press activation logic on this flag. -> KO
+
+COMPONENT VERIFIERSIPRESENCEPLAQUETTE
+2. QWEN : 5000 ms
+-------------------------------------
+
+	VerifierSiPresencePlaquette/Structure: Le requirement 'VerifierSiPresencePlaquette' est dupliqué avec deux instances différentes (id:5) et des descriptions légèrement différentes, ce qui crée une incohérence dans la spécification du comportement nécessaire pour vérifier la présence de plaquettes. How to solve? Fusionner les deux exigences 'VerifierSiPresencePlaquette' en une seule avec une description claire et cohérente qui couvre toutes les situations d'utilisation nécessaires : vérifier qu'une plaquette est présente avant de déposer un filet sur la machine 2, et vérifier qu'une plaquette est présente avant d'activer la presse sur la machine 3. -> OK
+
+
+
+
+
+
+
+
+
+
+
+
+
++-------------------+
+! USE CASE DIAGRAMS !
++-------------------+
+
+-----------
+UCD_1
+-----------
+
+OVERALL DIAGRAM
+1. OSS : 11534 ms
+-----------------
+
+	Missing Actionner Types/Structure: The model lists a generic Actionneurs actor but does not distinguish the specific actuators (pince, presse, moteurs latéraux/verticals) required for each machine. How to solve? Introduce distinct subclasses or attributes for each actuator type within the Machines actors, linking them to their respective machines and specifying their roles in the system. component: Actionneurs -> OK
+
+	Missing Sensor Types/Structure: Only CapteursPosition and CapteursPresence are defined, but the specification mentions proprioceptive sensors for each machine and presence sensors specific to machines 1-3. How to solve? Add separate sensor actors or attributes for each machine’s proprioceptive and presence sensors, ensuring that they are associated with the correct machine and feed into data collection. component: CapteursPresence -> OK
+
+	Missing Machine Actors/Structure: The model has a generic Machines actor but does not separate machines 1, 2, and 3 with their unique behaviours and constraints. How to solve? Create individual actors (Machine1, Machine2, Machine3) inheriting from Machines, each containing specific sensors, actuators, and rules about allowed actions. component: Machines -> OK
+
+	Lack of Conveyor Control Logic/Structure: The conveyor motor and its stop/start behaviour when machines finish tasks are not represented in the model. How to solve? Add a Conveyor actor with a Motor attribute, and define use cases or state transitions that capture stopping during machine operations and resuming only after all three machines complete. component: Tapis -> OK
+
+	Constraint Violations Not Modeled/Structure: The specification explicitly forbids certain actions (e.g., machine1 stacking, machine2 placing filet without plaquette). These constraints are missing from the model. How to solve? Introduce guard conditions or validation rules in the use cases that enforce these prohibitions, ensuring that the controller’s commands cannot trigger disallowed states. component: Actionneurs -> OK
+
+	Missing Data Flow Between Sensors and Controller/Structure: The model does not show how sensor data is aggregated by the controller before sending commands to actuators. How to solve? Add a Controller actor with associations to all sensors and actuators, and define a DataCollection use case that aggregates sensor inputs and produces command outputs. component: CollecteDonnées -> KO
+
+	Absence of Parallel Execution Modeling/Structure: The specification states all machines and conveyor are managed in parallel by a single controller, which is not captured. How to solve? Use concurrency constructs (e.g., concurrent use cases or threads) within the Controller actor to reflect simultaneous monitoring and actuation across machines and conveyor. component: Machines -> KO
+
+	Missing Motor Actors for Machines/Structure: Each machine has two motors (lateral and vertical) but the model does not represent them separately. How to solve? Define Motor actors or attributes within each Machine actor, linking them to their respective actuators (pince or presse). component: Machines -> KO
+
+	No Representation of Storage Magazines/Structure: The specification mentions magazines for plaquettes, filets, and films, which are not modeled. How to solve? Add Magazine actors with appropriate capacities and link them to the corresponding machines as source/sink of materials. component: Machines -> KO
+
+	Missing Exit Receptacle Actor/Structure: The receptacle where sealed plaquettes are deposited is not represented in the model. How to solve? Introduce a Receptacle actor and associate it with Machine3’s press actuator, including sensors if needed to detect presence of sealed plaquette. component: Machines -> OK
+
+
+OVERALL DIAGRAM
+2. QWEN : 16873 ms
+---------------------
+	Missing Machine Specific Sensors/Structure: The model does not distinguish between different sensor types for each machine. The specification mentions specific sensors (proprioceptive and presence sensors) for machines 1 and 2, and similar sensors for machine 3. How to solve? Add separate sensor elements for each type of sensor per machine in the model to accurately represent their distinct functionalities. component: CapteursPosition -> KO
+
+	Missing Actionneur Types/Structure: The model only references a generic 'Actionneurs' element without specifying the different types of actuators (pince, moteur, presse) required by each machine. How to solve? Create specific actuator elements for each type mentioned in the specification and associate them with their respective machines. component: Actionneurs -> KO
+
+	Missing Constraints/Structure: The model does not capture any of the three constraints that prohibit incorrect operations (placing on existing plaquettes, placing filet without plaquette, or scelling without plaquette). How to solve? Add constraint checking logic in the behavioral description to ensure these conditions are enforced by the controller. component: Machines -> OK
+
+	Missing Tapis Control Logic/Structure: The model does not include the tapis roulant's control logic that stops during machine operations and advances only when all machines finish their current task. How to solve? Add explicit behavioral descriptions for tapis control, including stop/start conditions based on machine activity states. component: Tapis -> OK
+
+	Missing Machine Coordination/Structure: The model does not represent the coordination mechanism where all machines must complete their tasks before tapis advances to next plaquette. How to solve? Add synchronization mechanisms in the behavioral description that ensure coordinated operation among all three machines. component: Machines -> OK
+
+	Missing Supply Chain Elements/Structure: The model lacks explicit representation of supply stores (plaquettes, filets, films) that feed the machines. How to solve? Add store elements as separate components in the system architecture with appropriate connections to their respective machines. component: Machines -> KO
+
+	Incomplete Sensor Integration/Structure: The model doesn't fully integrate all sensors mentioned for each machine, particularly the proprioceptive sensors that determine position of pince/presse. How to solve? Add specific integration paths from each sensor type to its respective machine and controller components. component: CapteursPresence -> KO
+
+	Missing State Management/Structure: The model lacks explicit handling of state transitions between different operational states (idle, collecting, processing, waiting). How to solve? Implement detailed behavioral states for each machine and tapis with clear transition rules based on sensor inputs. component: Machines -> OK
+
+	Missing Safety Mechanism Implementation/Structure: The model does not show how safety constraints are enforced, particularly the prohibition of operations without proper preconditions. How to solve? Add explicit validation logic in behavioral description before executing any action that checks for required conditions. component: Actionneurs -> OK
+
+	Missing Detailed Machine Descriptions/Structure: The model doesn't provide distinct representations of the three different machines with their specific functionalities and components. How to solve? Create separate machine entities with unique attributes for each machine type (1, 2, 3) that reflect their specific actuator/sensor configurations. component: Machines -> OK
+
+
+COMPONENT 
+1. OSS : 5022 ms
+-------------------------------------
+	Integrate explicit presence validation and timeout handling/Structure: The current ‘Attendre Presence de plaquette’ use case lacks a concrete mechanism to verify that a plate is present before the machines proceed. This omission can lead to scenarios where the system continues to command actions (e.g., picking or sealing) even when no plate is detected, violating constraints 2 and 3 of the specification. Moreover, there is no timeout or fallback in case the sensor fails to detect a plate for an extended period. How to solve? Extend the use case so that it explicitly reads from the CapteursPresence sensor, checks its value, and only transitions to the next step when a plate is confirmed. Add a counter or timer that triggers a fault-handling routine if no plate is detected within a predefined time window. This routine should pause the conveyor, signal an alarm, and optionally retry the presence check before aborting the operation. -> OK
+
+COMPONENT 
+2. QWEN : 3491 ms
+-------------------------------------
+	Ajout d'une vérification de présence avant action/Structure: Le use case 'Attendre Presence de plaquette' ne prend pas en compte la vérification obligatoire de la présence d'une plaquette avant que les machines 1, 2 ou 3 effectuent leurs actions, comme spécifié dans les contraintes du système. How to solve? Modifier le use case 'Attendre Presence de plaquette' pour intégrer une étape de vérification préalable à la présence d'une plaquette via le capteur correspondant (CapteursPresence), et ne permettre l'exécution des actions que si une plaquette est présente devant la machine concernée. -> OK
+
+
+
+---------
+UCD_2
+---------
+
+OVERALL DIAGRAM
+1. OSS : 9669 ms
+-----------------
+
+	Missing actionneurs for machine 2/Structure: The model lists actionneurs only for Machine1 and Machine3, but the specification states that Machine2 also has a pince, a lateral motor, and a vertical motor. How to solve? Add an Actionneurs Machine2 component with attributes for the pince, lateral motor, and vertical motor. Then link it to the relevant use cases (StopperChaine, ContinuerCycle). component: Machine2 -> OK
+
+	Missing proprioceptive sensors for machines 1 and 2/Structure: The specification requires a proprioceptive sensor for each machine to know the position of its pince, yet the model only includes generic Capteurs Machine 1et2 without distinguishing this type. How to solve? Introduce distinct sensor types (e.g., SensorProprioceptifMachine1, SensorProprioceptifMachine2) and associate them with the corresponding actionneurs. Update the use case associations accordingly. component: Capteurs -> KO
+
+	Missing presence sensors for machine 3/Structure: The specification specifies a presence sensor for Machine3, but the model only contains Capteurs Machine 3 without specifying its function. How to solve? Define a PresenceSensorMachine3 element and connect it to TraiterInfos or other relevant use cases. Ensure it is used in safety constraints. component: Capteurs -> OK
+
+	Missing motor for the conveyor belt/Structure: The specification mentions a motor controlling the conveyor, but no such component appears in the model. How to solve? Add an Actionneurs ConveyorMotor element and link it to StopperChaine and ContinuerCycle use cases. Include it in the associations with TraiterInfos if needed. component: Tapis -> OK
+
+	Absence of safety constraints for forbidden actions/Structure: The specification lists three forbidden actions (e.g., Machine1 placing a plate on another plate). The model does not capture these safety rules. How to solve? Introduce constraint elements or guard conditions in the use cases (StopperChaine, ContinuerCycle) that check sensor inputs and prevent the forbidden actions. Document these constraints explicitly in the model. component: GererErreurs -> OK
+
+	Missing linkage between sensors and actionneurs/Structure: While the model associates Capteurs with TraiterInfos, it does not link sensor data to specific actionneurs (e.g., using presence sensor to activate the lateral motor). How to solve? Create associations or message flows from each sensor to its corresponding actionneur component within the use cases. This ensures that sensor readings directly influence actuator behavior. component: Capteurs -> OK
+
+	Unspecified type of employees in model/Structure: The model includes an 'Employés' actor but does not describe its responsibilities or interactions beyond generating sound. How to solve? Define the role of Employees more clearly, possibly adding use cases like MonitorChain or OverrideControl. Clarify how they interact with other actors and components. component: Employés -> OK
+
+
+OVERALL DIAGRAM
+2. QWEN : 19292 ms
+---------------------
+
+	Missing machine 1 plaquette placement constraint/Structure: The system specification states that machine 1 should not place a plaque on top of another plaque, but this constraint is not represented in the model. How to solve? Add a constraint or guard condition in the model to prevent machine 1 from placing a plaque when one already exists in front of it. component: Machine1 -> OK
+
+	Missing machine 2 salmon filet placement constraint/Structure: The system specification requires that machine 2 should not place a salmon fillet if no plaque is present in front of it, this restriction is missing from the model. How to solve? Introduce a precondition or constraint in the model ensuring machine 2 only operates when a plaque is detected in front of it. component: Machine2 -> OK
+
+	Missing machine 3 film sealing constraint/Structure: The specification indicates that machine 3 should not seal a film on the belt (without any plaque), but this safety rule is absent from the model. How to solve? Implement a detection and control logic in the model to ensure machine 3 only acts when there is a plaque present. component: Machine3 -> OK
+
+	Missing conveyor belt movement coordination/Structure: The system requires that the conveyor moves only after all machines complete their operations on a plaque, but this synchronization is not modeled. How to solve? Model a coordinated control mechanism or state machine that synchronizes tapis movement with completion of operations across all three machines. component: Tapis -> OK
+
+	Missing actionneurs for Machine 1 and 2/Structure: The specification describes detailed actuators (gripper, lateral motor, vertical motor) for machines 1 and 2, but these are not explicitly modeled. How to solve? Add specific actor nodes representing the gripper, lateral motor, and vertical motor actions for Machine 1 and Machine 2 in the model. component: Actionneurs -> OK
+
+	Missing actionneurs for Machine 3/Structure: The specification details actuators (press, lateral motor, vertical motor) for machine 3 but the model doesn't represent these. How to solve? Include specific actor nodes representing press, lateral motor, and vertical motor actions for Machine 3 in the model. component: Actionneurs -> OK
+
+	Missing sensors for Machine 1/Structure: The specification details proprioceptive sensor and presence detection sensor for machines 1 and 2, but only one combined sensor is modeled. How to solve? Model separate sensor actors for each capability: proprioceptive sensors and presence sensors for Machine 1. component: Capteurs -> OK
+
+	Missing sensors for Machine 2/Structure: Similar to machine 1, the specific sensor types for machine 2 are not properly represented in the model. How to solve? Separate and represent the proprioceptive and presence detection sensors specifically for Machine 2. component: Capteurs -> OK
+
+	Missing sensors for Machine 3/Structure: The model does not distinguish between different sensor types (proprioceptive and presence detection) specific to machine 3. How to solve? Add separate actor nodes representing the proprioceptive sensor and presence detection sensor for Machine 3 in the model. component: Capteurs -> OK
+
+	Missing explicit operational sequence/Structure: The system requires a precise sequential process where operations on each plaque must be completed before advancing to next, which is not captured in the model's behavior. How to solve? Model an explicit workflow or sequence diagram showing step-by-step operation and coordination among machines and conveyor. component: TraiterInfos -> KO
+
+
+COMPONENT GENERERSON
+1. OSS : 6380 ms
+-------------------------------------
+	Add sensor inputs to GenererSon/Structure: The current model connects the use case GenererSon only with Employés, omitting any reference to machine or sensor data. According to the system specification, sound generation should be triggered only after confirming that a valid plaquette is present and that no illegal state (e.g., missing plaquette) exists before machines operate. Without sensor inputs, the controller cannot enforce this rule during the sound‑generation phase. How to solve? Extend the GenererSon use case to include associations with Capteurs Machine 1et2 and Capteurs Machine 3. Add a precondition that checks the presence flag from these sensors before executing the sound generation action. This ensures that the controller only produces audio cues when all machines are in a valid state, thereby aligning the model with the specified constraints -> OK
+
+
+COMPONENT GENERERSON
+2. QWEN : 15780 ms
+-------------------------------------
+	Ajout des contraintes de sécurité dans le use case GenererSon/Structure: Le use case 'GenererSon' ne prend pas en compte les contraintes de sécurité spécifiées dans la spécification système qui interdisent certaines opérations lorsqu'une plaquette n'est pas présente devant les machines. How to solve? Il faut enrichir le diagramme d'utilisation du use case 'GenererSon' avec des gardes (guards) ou des conditions préalables qui vérifient l'existence d'une plaquette avant de permettre les actions de disposition de plaquettes, filets de saumon ou films plastiques. Cela implique d'intégrer des vérifications basées sur les capteurs dans le comportement du use case pour s'assurer que les opérations ne sont effectuées que lorsque les conditions requises sont remplies. -> OK
+
+
+-------
+UCD_3
+-------
+
+OVERALL DIAGRAM
+1. OSS : 7991 ms
+-----------------
+	Missing machine identifiers/Structure: The model lumps all machines into a single actor without distinguishing Machine 1, Machine 2 and Machine 3. How to solve? Create separate actors or subcomponents for each machine (e.g., Machine1, Machine2, Machine3) and connect their specific actuators and sensors accordingly. component: actors -> KO
+
+	Absent sensor types/Structure: The specification lists proprioceptive sensors and presence sensors for each machine, but the model only references a generic 'capteursMachines1&2' and 'capteursMachine3'. How to solve? Define distinct sensor actors (e.g., ProprioSensorM1, PresenceSensorM1, etc.) and link them to their respective machines. component: capteurs -> KO
+
+	Missing actuator types for Machine 3/Structure: Machine 3 has a press actuator with lateral and vertical motors, but the model only includes a generic 'actionneursMachine'. How to solve? Add specific actuators (e.g., PressActuator, MotorLateralM3, MotorVerticalM3) to the Machine 3 actor. component: actuators -> KO
+
+	No conveyor motor modeling/Structure: The conveyor has its own motor that controls movement, yet no actuator or control relation for it is present in the model. How to solve? Introduce a ConveyorMotor actor and connect it to the tapisDriver and controller actions for starting/stopping. component: tapisDriver -> KO
+
+	Missing parallel execution representation/Structure: The specification states that all machines and conveyor are managed in parallel by a single controller, but the model does not capture concurrency. How to solve? Add sequence diagrams or statecharts showing simultaneous operations and synchronization points between machines and conveyor. component: controlleur -> ko
+
+	Invalid action constraints/Structure: Constraints that certain actions must never occur (e.g., Machine 1 stacking plates) are not represented in the model. How to solve? Implement guard conditions or precondition checks in the controller logic to prevent these invalid states. component: verifierActions -> KO
+
+	No explicit presence detection for plates and fillets/Structure: The model uses a generic 'recupérerPresenceOuNonBarquette' but does not differentiate between plate and filet detection. How to solve? Create separate sensors or methods (e.g., detectPlate, detectFilet) and link them to the appropriate machines. component: capteurs -> OK
+
+	Missing lateral motor for Machine 1 and 2/Structure: Machines 1 and 2 have lateral motors moving the gripper between store and conveyor, but no such actuator is modeled. How to solve? Add MotorLateralM1, MotorLateralM2 actors linked to their respective grippers. component: actuators -> KO
+
+	No representation of vertical motors for all machines/Structure: Vertical movement actuators are not explicitly modeled for any machine. How to solve? Introduce MotorVerticalM1, MotorVerticalM2, MotorVerticalM3 and connect them to the grippers or press. component: actuators -> KO
+
+	Absence of command sequencing for stopping conveyor/Structure: The rule that the conveyor stops until all machines finish their current task is not captured in the controller logic. How to solve? Add a state or guard in the controller that waits for 'verifierActionsTerminées' from all machines before sending 'avancer' to the conveyor motor. component: tapisDriver -> OK
+
+
+OVERALL DIAGRAM
+2. QWEN : 57230 ms
+---------------------
+	Missing Machine 1 and Machine 2 Specific Elements/Structure: The model does not distinguish between Machine 1 and Machine 2, but the specification requires different behaviors for each machine (plaquette placement vs. salmon fillet placement) with specific sensors and actuators. How to solve? Create separate entities or components for Machine 1 and Machine 2 to represent their distinct functions, sensors, and actuators as described in the specification. component: capteursMachines1&2 -> OK
+
+	Missing Safety Constraints/Structure: The model does not capture the three safety constraints that prevent incorrect operations (placing plaquette on plaquette, salmon fillet without plaquette, film without plaquette). These are critical behavioral requirements. How to solve? Add constraint checking mechanisms in the control logic to verify each action against these rules before execution, using sensor feedback and state management. component: verifierActions -> OK
+
+	Incomplete Machine 3 Description/Structure: Machine 3's specific elements (film storage, output receptacle) are not properly represented in the model, while only its basic functions appear to be modeled. How to solve? Add explicit modeling elements representing the film storage and output receptacle components for Machine 3, with their respective states and interactions. component: capteursMachine3 -> OK
+
+	Missing Tapis Roulant Specific Behavior/Structure: The specification clearly describes the tapis roulant behavior (stopping during processing, advancing only after all machines complete their tasks), but this is not modeled in detail. How to solve? Model the tapis roulant as a controlled system with specific states and synchronization logic that coordinates with machine actions to ensure proper timing. component: tapisDriver -> KO
+
+	Missing Actionneurs Machine 3/Structure: The model only mentions 'actionneursMachine' without specifying that Machine 3 has unique actuators (press, lateral motor, vertical motor) unlike Machines 1 and 2. How to solve? Explicitly represent the three specific actuators of Machine 3: press, lateral motor, and vertical motor in the model architecture. component: actionneursMachine -> OK
+
+	Missing Sensor Types/Structure: The specification details different types of sensors (proprioceptive sensors, presence detectors), but these are not distinguished in the model which only has generic sensor elements. How to solve? Distinguish between proprioceptive sensors and presence detection sensors for each machine in the model to accurately represent their capabilities. component: capteursMachines1&2 -> OK
+
+	Missing Synchronization Logic/Structure: The specification requires strict synchronization where all machines must complete tasks before the tapis advances, but this coordination logic is not modeled. How to solve? Implement a synchronization mechanism in the control logic that ensures proper sequencing and waiting states for all machines when coordinating with the conveyor belt. component: traiterDonnéesCapteurs -> KO
+
+	Incomplete Machine 1 Functionality/Structure: Machine 1's specific function of placing plaquettes on the conveyor is not fully captured in the model, particularly its interaction with the storage and positioning mechanisms. How to solve? Add detailed state machines or process descriptions for Machine 1 that specifically handle plaque placement actions and interactions with the storage system. component: capteursMachines1&2 -> OK
+
+	Missing Magasin Representations/Structure: The specification mentions storage systems for plaquettes, salmon fillets, and films but these are not represented in the model. How to solve? Add explicit modeling elements representing the storage systems (magasins) with their states (empty/full), and interactions with respective machines. component: capteursMachines1&2 -> KO
+
+	Incomplete Conveyor System Mo1deling/Structure: The tapis roulant is modeled as a driver but the specification describes it with specific movements and synchronization requirements that are not reflected. How to solve? Model the conveyor system's movement states (moving/stopped) and its interaction protocol with machine operations to ensure proper timing. component: tapisDriver -> KO
+
+
+COMPONENT ENVOYERCOMMANDEAVANCER
+1. OSS : 5274 ms
+-------------------------------------
+	Add explicit completion verification before advancing/Structure: The current use case 'envoyerCommandeAvancer' does not explicitly verify that all three machines have completed their tasks on the current plaquette before the conveyor is commanded to move. This can lead to a scenario where the conveyor advances while a machine is still processing, violating the system specification that requires the belt to stop until all machines finish. How to solve? Introduce a precondition check in 'envoyerCommandeAvancer' that queries each machine’s status (e.g., via sensor readings or a dedicated ‘isBusy’ flag). Only send the advance command to tapisDriver when all three status flags indicate completion. If any machine is still busy, hold the conveyor and optionally trigger an alarm. This can be implemented by adding a new interaction step: 'verifyMachineCompletion' that aggregates sensor data before invoking the existing 'envoyerCommandeAvancer'. -> KO
+
+COMPONENT ENVOYERCOMMANDEAVANCER
+2. QWEN : 7093 ms
+-------------------------------------
+	Missing validation for plaquette presence before machine operations/Structure: The use case 'envoyerCommandeAvancer' does not validate that the required components (plaquettes, filets, or films) are present before initiating actions, which could lead to violations of system constraints. How to solve? Modify 'envoyerCommandeAvancer' to include pre-condition checks ensuring that plaquettes are present for machine 1 operations, and that both plaquettes and filets are present for machine 2 operations, as well as plaquettes being present for machine 3 operations before sending advancement commands. -> KO
+
+
+
+
++---------------+
+! BLOCK DIAGRAM !
++---------------+
+
+----------
+BD_1
+----------
+
+OVERALL DIAGRAM
+1. OSS : 9577 ms
+----------------
+	WatchdogTask/Structure: Missing implementation of the periodic watchdog that signals all tasks every 10 ms and restarts the system if any task fails to respond. How to solve? Add a dedicated Watchdog block with a timer trigger, a signaling mechanism for each active task, and a restart routine that is invoked when a timeout occurs. Ensure the Watchdog itself is exempt from monitoring. component: Watchdog -> OK
+
+	TMCancellationLogic/Structure: No model element handles cancellation of an in‑progress telemetry packet when a new command arrives during its construction. How to solve? Introduce a TM_Construction block with a cancel signal that is triggered by the RF_Receiver upon receipt of a new TC while a TM is being built. The block should abort the current build and start a fresh one. component: TM_Encipher_Module -> KO
+
+	ErrorCorrectionCode/Structure: Missing CRC or ECC storage for each data block written to memory, as required by the specification. How to solve? Add a MemoryBlock subblock that contains both the data payload and its computed CRC. Include methods to compute, store, and verify the CRC during read/write operations. component: Memory -> OK
+
+	EncryptionPipeline/Structure: The model lacks a clear flow for ciphering outgoing telemetry and deciphering incoming telecommands. How to solve? Define explicit data paths: TC_Decipher_Module → Sensors_API → TM_Encipher_Module → RF_Transmitter. Ensure that encryption/decryption methods are invoked at the correct stages. component: Encryption_Module -> KO
+
+	SignalPropagation/Structure: Signals between RF modules and the software layer (e.g., forwardingTC, forwardTCforDecryption) are not fully connected to the system state machine. How to solve? Add transitions in Space_Based_System_Software that react to these signals: upon receiving a TC, trigger decryption; upon completing a TM, trigger enciphering and transmission. component: RF_Tranceiver -> KO
+
+	TaskResponsivenessMonitoring/Structure: No explicit mechanism for sending signals to tasks and detecting unresponsive ones. How to solve? Create a Monitor block that sends heartbeat messages to each task. Each task must acknowledge; missing acknowledgments trigger the Watchdog restart routine. component: Watchdog -> OK
+
+	BatteryLowHandling/Structure: Specification states that the watchdog may crash if battery is too low, but no model element represents this condition. How to solve? Add a BatteryLevelMonitor block that checks battery level and, if below threshold, disables the Watchdog or initiates safe shutdown procedures. component: Battery_Level_Sensor -> OK
+
+	MemoryInterface/Structure: The model does not specify how data blocks are written to and read from memory, nor where CRCs are stored. How to solve? Introduce a MemoryManager block with writeData(data, crc) and readData() methods, ensuring that each access updates or checks the CRC accordingly. component: Memory -> OK
+
+	TelemetryPacketBuilder/Structure: No dedicated component for assembling telemetry packets from sensor readings. How to solve? Create a PacketBuilder block that gathers data from Sensors_API, applies CRC, and forwards the packet to TM_Encipher_Module. Include cancellation support as noted above. component: TM_Encipher_Module -> OK
+
+	GroundStationInterface/Structure: The Ground_Station block only emits sendTC(); it does not model receiving telemetry or handling acknowledgments. How to solve? Add a receiveTM() signal to Ground_Station and link it to a response handler in Space_Based_System_Software that processes incoming telemetry data and updates system status. component: Ground_Station -> KO
+
+
+OVERALL DIAGRAM
+2. QWEN : 37175 ms
+---------------------
+	Missing Watchdog Task Implementation/Structure: The model does not capture the detailed behavior of the watchdog task that checks other tasks every 10ms and restarts the system if necessary. How to solve? Add a dedicated state machine for the watchdog with periodic checking logic, signal sending to tasks, and system restart conditions. component: Watchdog -> OK
+
+	CRC Error Correction Code Implementation/Structure: The model does not represent the CRC computation and verification mechanism for data integrity in memory. How to solve? Add CRC calculation methods to data writing operations and CRC validation during reading in relevant blocks like Memory or Storage components. component: Encryption_Module -> OK
+
+	TM Cancellation Mechanism/Structure: The model doesn't implement the logic to cancel a TM under construction when a new TC is received. How to solve? Add state transitions in the TM building process that detect incoming TC signals and trigger cancellation of current TM computation. component: Space_Based_System_Software -> OK
+
+	Data Buffer Management/Structure: The model lacks explicit representation of the intermediate buffer used for storing deciphered TC data before processing. How to solve? Add a dedicated buffer block or memory component in the system to manage incoming deciphered TC data. component: TC_Decipher_Module -> OK
+
+	Bit Flip Fault Handling/Structure: The model doesn't account for handling bit flips caused by high-energy particles in the system's memory. How to solve? Integrate error detection and correction mechanisms into memory operations, likely through CRC or similar protection methods. component: Memory -> OK
+
+	TM Sending Process/Structure: The model doesn't fully capture how TM packets are constructed and sent via RF transmitter with enciphering. How to solve? Add detailed steps for packet construction, encryption using TM_Encipher_Module, and transmission through RF_Transmitter. component: TM_Encipher_Module -> OK
+
+	TC Reception Flow/Structure: The model shows TC reception but doesn't detail the full flow from signal reception to task triggering. How to solve? Add more detailed transitions showing how RF receiver triggers TC processing, decryption, and request handling in the software. component: RF_Receiver -> OK
+
+	Task Synchronization/Structure: The model lacks explicit task synchronization mechanisms between different software tasks including watchdog. How to solve? Add signal-based communication protocols or shared memory sections to manage task coordination and signaling. component: Space_Based_System_Software -> OK
+
+	Battery Low Condition Handling/Structure: While mentioned in specification, the model does not show how low battery conditions affect watchdog operation. How to solve? Add conditional logic to the Watchdog task that allows it to crash only when battery is too low for microcontroller power. component: Watchdog -> OK
+
+	Sensor Data Reading Interface/Structure: The Sensors_API block has in signals but doesn't show how it actually interfaces with individual sensors or processes their data. How to solve? Expand the Sensor API to include methods that handle sensor-specific reading operations and integrate with individual sensor blocks. component: Sensors_API -> OK
+
+
+
+COMPONENT
+1. OSS : 5809 ms
+----------------
+	Add CRC computation and verification for transmitted telemetry/Structure: The system specification requires that every data block written to memory, including the telemetry packet sent by the RF transmitter, must have an associated CRC. The current RF_Transmitter model has no behavior that calculates or attaches a CRC before transmission nor verifies it on reception, violating the reliability requirement. How to solve? Extend the RF_Transmitter state machine with a new state (e.g., 'ComputeCRC') that invokes a CRC method from the Encryption_Module or a dedicated CRC module. After generating the telemetry packet, transition to this state to compute the CRC over the packet data and append it to the output signal. Additionally, add a verification step when the packet is received by the ground station (or by a receiver model) to check the CRC before processing. -> OK
+
+COMPONENT
+2. QWEN : 3633 ms
+--------------------
+	Missing TM Transmission Capability/Structure: The RF_Transmitter block is missing the capability to transmit TM (TeleMetry) packets as specified in the system requirements, which is a core function of the RF transmitter component. How to solve? Add an output signal 'forwardingTM()' to the RF_Transmitter block and establish a relation connecting it to the appropriate module that handles TM transmission, ensuring the transmitter can send telemetry data back to ground station as required by system specification. -> KO
+
+
+------
+BD_3
+------
+
+OVERALL DIAGRAM
+1. OSS : 9903 ms
+----------------
+	Watchdog_Task/Structure: The specification requires a dedicated watchdog task that checks every 10 ms whether all other tasks are responsive and restarts the system if not. The model has no block or state machine representing this watchdog. How to solve? Add a new block called `Watchdog_Task` with a periodic timer (e.g., a `Timer_10ms`) that sends heartbeat signals to each task. Include logic to detect missed responses and trigger a system restart transition, excluding the watchdog itself. component: Watchdog -> KO
+
+	CRC_Error_Correction/Structure: Each memory write must be accompanied by an error‑correcting code (CRC) that is also stored and verified on read. The model lacks any representation of CRC calculation, storage, or verification. How to solve? Introduce a `Memory_Block` component with attributes for data and CRC. Add methods `computeCRC()` and `verifyCRC()` in the software block, and invoke them during write/read operations to enforce integrity. component: Memory -> KO
+
+	TM_Cancellation_on_New_TC/Structure: When a new TC arrives while a TM is being computed, the in‑progress TM must be cancelled and replaced by the latest one. The current model does not capture this cancellation logic. How to solve? Add a flag or state variable in `Space_Based_System_Software` that indicates an ongoing TM build. On receipt of a new TC, transition to a `Cancel_TM` state before starting the new TM construction. component: TM_Encipher_Module -> KO
+
+	Periodic_Task_Check/Structure: The specification mentions that every task must respond to a signal sent by the watchdog. No such periodic checking or signaling mechanism is present in the model. How to solve? Create a `Task_Manager` block that periodically (10 ms) sends a ping signal to each task and waits for acknowledgments. If an acknowledgment fails, trigger the watchdog restart sequence. component: Space_Based_System_Software -> KO
+
+	Encryption_Usage_in_TC_TM/Structure: The model defines encryption/decryption modules but does not show their use in the TC reception and TM transmission flows. How to solve? Add transitions that route incoming encrypted TCs to `TC_Decipher_Module`, then to sensor reading, followed by `TM_Encipher_Module` before sending via `RF_Transmitter`. Ensure signatures/certs are verified where appropriate. component: Encryption_Module -> OK
+
+	Sensor_Read_Request/Structure: The specification states that the software builds an answer by reading requested values from sensors. The model only contains sensor blocks but no mechanism to trigger reads based on TC content. How to solve? Add a `Request_Handler` block that parses the decrypted TC, invokes corresponding `Sensors_API.readX()` signals, collects the data, and passes it to the TM encoder. component: Sensors_API -> KO
+
+	RF_Transmitter_Memory_Assignment/Structure: The RF_Transmitter block declares an attribute `memory__memory` but its type and purpose are unclear, leading to ambiguity about where TM data is stored before transmission. How to solve? Define a clear memory model (e.g., a FIFO buffer) within `RF_Transmitter`, specify the data format of TMs, and connect it to the `TM_Encipher_Module` output. component: RF_Transmitter -> KO
+
+	Ground_Station_TC_Format/Structure: The model does not specify the format or structure of the TC that the ground station sends, which is necessary for proper encryption/decryption and parsing. How to solve? Add a `TC_Format` data type with fields (e.g., command ID, payload, checksum) and use it in `Ground_Station.sendTC()` and related modules. component: Ground_Station -> OK
+
+
+
+OVERALL DIAGRAM
+2. QWEN : 20686 ms
+---------------------
+	Missing Watchdog Task Implementation/Structure: The system specification describes a critical watchdog task that checks all other tasks every 10ms, but the model does not show any implementation or representation of this task's behavior. How to solve? Add a dedicated state machine for the Watchdog task with periodic checking behavior and restart logic in the Space_Based_System_Software block. component: Watchdog -> KO
+
+	No CRC Error Correction Handling/Structure: The specification requires CRC computation and verification for all memory writes, but the model does not represent any mechanism for checking or handling these CRCs. How to solve? Add methods to handle CRC generation during write operations and validation during read operations in appropriate blocks like Memory or Sensor_API. component: CRC -> KO
+
+	No TM Cancellation Mechanism/Structure: The specification states that if a new TC is received while computing a TM, the current TM should be canceled and replaced by the newer one. How to solve? Add state transitions or control logic in the Space_Based_System_Software to handle cancellation of TM construction when new TC arrives. component: TM -> KO
+
+	Missing Bit Flip Handling/Structure: The system specification mentions that high-energy particles can cause bit flips, but this is not modeled in any part of the software or hardware architecture. How to solve? Integrate error detection and correction mechanisms at memory level or add a subsystem for handling single event upsets (SEUs). component: BitFlip -> OK
+
+	Incomplete TC Processing Flow/Structure: The specification describes the complete flow of TC processing including deciphering, buffering, and triggering task execution, but this is not fully captured in the model's state transitions. How to solve? Add detailed state transitions from TC reception through decryption to buffer storage and task triggering within Space_Based_System_Software block. component: TC -> KO
+
+	Missing Ground Station Communication/Structure: The ground station is modeled as a block but lacks the proper communication interfaces for sending TM telemetry back to ground stations. How to solve? Add appropriate signals or methods in Ground_Station to represent transmission of telemetry data and reception of telecommands. component: Ground_Station -> KO
+
+	TM Enciphering Not Fully Modeled/Structure: While TM_Encipher_Module exists, the complete process of building and enciphering a TM packet is not modeled in detail. How to solve? Add detailed state transitions showing data collection from sensors, packet assembly, encryption step, and transmission via RF_Transmitter. component: TM_Encipher -> KO
+
+	RF Communication Flow Incomplete/Structure: The relationships between RF components are only partially represented; the full communication path from TC reception to TM transmission is missing. How to solve? Add complete signal flow through RF receiver, decryption module, and transmitter with appropriate state transitions for each component. component: RF -> KO
+
+	Sensor Data Read Interface Missing/Structure: While Sensors_API has input signals, it doesn't represent how sensor data is actually read and processed in response to the requested telemetry. How to solve? Add detailed methods or state transitions in Sensors_API that show reading from each type of sensor based on command requests. component: Sensors_API -> KO
+
+	No Battery Level Check in Watchdog/Structure: The watchdog task should not restart if battery is too low, but this conditional behavior is missing from the model. How to solve? Add a condition check for battery level within the Watchdog state machine that prevents system reset when battery is critically low. component: Watchdog -> OK
+
+
+
+
+COMPONENT
+1. OSS : 5690 ms
+----------------
+	Implement TM Cancellation on New TC Reception/Structure: The specification requires that if a new TeleCommand (TC) arrives while a Telemetry (TM) packet is being constructed, the in‑progress TM must be cancelled and a new TM generated for the latest TC. The current model lacks any mechanism to detect overlapping TCs or to cancel an ongoing TM construction within the Space_Based_System_Software block. How to solve? Add a state transition in the TC_Reception state machine of Space_Based_System_Software that checks whether a TM_Construction task is active. If so, trigger a cancellation event (e.g., signal `cancelTM`) to terminate the current TM building process. Then resume processing the new TC by re‑entering the TM_Encipher_Module path. This ensures compliance with the specification and prevents redundant telemetry transmissions. -> KO
+
+COMPONENT
+2. QWEN : 3933 ms
+--------------------
+	Missing TC Reception Handling/Structure: The Block/Reception component does not properly model the handling of concurrent TC reception and TM construction cancellation as specified in the system specification. How to solve? Add a state transition in the RF_Receiver or Space_Based_System_Software block to handle the case where a new TC is received while a TM is being constructed, ensuring that the current TM is canceled and a new one is prepared based on the latest TC. -> KO
+
+
+--------
+BD_2
+--------
+
+OVERALL DIAGRAM
+1. OSS : 8781 ms
+-----------------
+	WatchdogTask/Structure: The specification requires a dedicated watchdog task that checks every 10 ms whether all other tasks are responsive and restarts the system if any fail. This behavior is not represented in the model. How to solve? Add a Watchdog task block with a periodic timer trigger (every 10 ms). Define signals to ping each task and a state that triggers a system restart when a task does not respond. component: Watchdog -> OK
+
+	TelemetryModule/Structure: The model lacks a module that builds, enciphers and sends telemetry (TM) packets to the ground station. Only encryption methods are present but no TM handling. How to solve? Introduce a TelemetryModule block with states for building, encrypting, and transmitting TM. Connect it to Sensors_API and Encryption_Module outputs. component: Telemetry -> KO
+
+	TM_Cancellation/Structure: When a new TC arrives while a TM is being computed, the current TM must be cancelled. This cancellation logic is absent. How to solve? Add a cancel signal from RF_Receiver to TelemetryModule and a state that aborts TM construction when a new TC is received. component: TM -> KO
+
+	CRCErrorCorrection/Structure: The specification demands CRC generation for every data block written to memory and CRC verification on read. No CRC handling exists in the model. How to solve? Create a CRC_Module with methods computeCRC() and verifyCRC(), and integrate it into Memory write/read operations. component: Memory -> OK
+
+	TC_EncryptionPipeline/Structure: The model does not show the flow from ground station TC to RF receiver, decryption, sensor read and TM encryption. The sequence is fragmented. How to solve? Define a clear pipeline: Ground_Station.sendTC → RF_Tranceiver.forwardingTC → RF_Receiver.receiving → TC_Decipher_Module.decrypt → Sensors_API.read* → TelemetryModule.build → Encryption_Module.encipher → RF_Tranceiver.forwardTCforDecryption. component: Encryption -> OK
+
+	PeriodicHealthCheck/Structure: The requirement that the watchdog task checks every 10 ms is not modeled. The current state machine lacks a periodic trigger. How to solve? Add a timer event in Watchdog block and a looped state that sends ping signals to all tasks at each tick. component: Watchdog -> OK
+
+	GroundStationReception/Structure: The model does not represent the reception of telemetry by the ground station or its verification. Only sending TC is modeled. How to solve? Add a Ground_Station block with an incoming signal for TM and a state that verifies MAC/signature using Encryption_Module. component: Ground -> KO
+
+	ErrorHandlingForHighEnergyParticles/Structure: Specification mentions high-energy particles causing bit flips. The model has no error detection or correction logic for such events. How to solve? Implement a memory parity check that triggers CRC verification and, if failed, invokes a safe-mode routine or system restart. component: Memory -> OK
+
+	TaskResponsivenessSignal/Structure: The model lacks explicit signals used by the watchdog to verify task responsiveness. How to solve? Add a generic signal 'taskHeartbeat' emitted by each task and received by Watchdog. Include states for handling missed heartbeats. component: Watchdog -> KO
+
+	ResourceAllocationForSensors/Structure: While sensors are read to build TM, the model does not show resource contention or prioritization among sensor tasks. How to solve? Introduce a scheduler component that allocates time slices to each sensor block and ensures non-blocking access during telemetry construction. component: Sensors -> KO
+
+
+
+OVERALL DIAGRAM
+2. QWEN : 21110 ms
+---------------------
+	Missing CRC Implementation/Structure: The model does not include any representation of the error correction code (CRC) mechanism for data blocks stored in memory, as required by the system specification. How to solve? Add a dedicated module or component that handles CRC computation and verification for all data blocks written to memory and ensure it's integrated into the memory writing/reading process. component: Memory -> OK
+
+	No TM Cancellation Mechanism/Structure: The model does not capture the behavior where a TM under construction is canceled when another TC is received, as specified in the system requirements. How to solve? Add logic to monitor incoming TCs during TM generation and implement cancellation of ongoing TM construction if a new TC arrives. component: TM_Encipher_Module -> OK
+
+	No Watchdog Task Integration/Structure: The model shows the watchdog task exists but doesn't properly integrate it as critical for system reliability, missing its specific role of checking other tasks every 10ms. How to solve? Explicitly model the periodic execution of the watchdog task and add state transitions or behaviors that demonstrate how it sends signals to other tasks and restarts them if unresponsive. component: Watchdog -> OK
+
+	Incomplete Encryption Handling/Structure: While encryption methods are listed, the specific sequence of TC decyphering followed by TM enciphering isn't modeled in relation to its temporal dependency and flow. How to solve? Model the data path between TC decryption and TM enciphering as a clear workflow with proper synchronization mechanisms. component: Encryption_Module -> OK
+
+	Missing Signal Interactions Between Components/Structure: There are gaps in how signals flow between key components like the RF receiver, TC deciphering module and TM enciphering module based on system behavior. How to solve? Ensure all signal interactions follow a complete chain from receiving TC to final TM transmission through proper state transitions and relations. component: RF_Receiver -> OK
+
+	No Bit Flip Fault Handling/Structure: The system specification mentions that high-energy particles can cause bit flips but there is no representation of any fault detection or handling in the model. How to solve? Add components or behaviors representing error detection (e.g., CRC checks) and recovery mechanisms against transient faults such as those caused by radiation. component: CRC -> OK
+
+	No Task Synchronization Mechanism/Structure: The model doesn't show how tasks communicate with the watchdog or coordinate their execution periods as required for real-time task scheduling. How to solve? Model communication and synchronization points between tasks, particularly the periodic signals sent by the watchdog to each software task. component: Watchdog -> OK
+
+	Missing Ground Station Interaction Flow/Structure: The behavior of sending TCs from ground station and handling them in space-based system isn't clearly modeled, especially the interaction between different modules. How to solve? Model a complete transaction flow including TC sending by Ground_Station to RF_Tranceiver, then receiving, deciphering, processing and finally generating TM response. component: Ground_Station -> OK
+
+	No Data Buffer Implementation/Structure: Though the system specification mentions an intermediate buffer for storing TC data after deciphering, this is not modeled as a dedicated entity. How to solve? Add a separate buffer component that stores incoming TCs before processing and ensure it's part of the control flow from decyphering to task triggering. component: Buffer -> OK
+
+	Inconsistent State Machine Coverage/Structure: Some blocks like Sensors_API and RF_Tranceiver have minimal state machines that don't fully reflect their roles in the overall system behavior. How to solve? Expand the state machine of key components to include transitions relevant to full operational flows including sensor readings, signal handling, and communication events. component: Sensors_API -> OK
+
+
+
+
+COMPONENT
+1. OSS : 6475 ms
+----------------
+	Add CRC computation and verification to RF_Transmitter/Structure: The system specification requires that every block of data written into memory has an associated CRC for error detection. The current RF_Transmitter model only forwards packets but does not compute or verify a CRC for the telemetry payload it sends to the ground station, violating the memory integrity requirement. How to solve? Extend the RF_Transmitter state machine with two new states: `ComputeCRC` and `VerifyCRC`. After the packet is constructed in the preceding task, transition to `ComputeCRC`, where a CRC routine (e.g., CRC‑32) is applied to the payload and appended to the packet. Before transmitting, transition to `VerifyCRC` to recompute the CRC from the stored payload and compare it with the appended value; if they differ, trigger an error handling state that discards the packet and logs an integrity fault. This ensures compliance with the specification’s requirement for memory safety and improves reliability of the telemetry transmission. -> OK
+
+COMPONENT
+2. QWEN : 4081 ms
+---------------------
+	Missing CRC Implementation in RF Transmitter/Structure: The RF_Transmitter block does not model the required error correction code (CRC) functionality that must be implemented when data is transmitted, as specified in the system requirements. How to solve? Add CRC computation and verification capabilities to the RF_Transmitter block, ensuring it computes a CRC for data packets before transmission and verifies incoming packets' CRCs. This should include methods or signals for CRC handling within the block's interface. -> OK
+
+
+
+
+
+
+
