@@ -34,6 +34,8 @@ Depending on the selected interaction mechanism (configurable in the **AI** menu
 - Hover your mouse pointer over a model component for 2 seconds, or  
 - Modify the model directly.
 
+You can also, by right-clicking on computed suggestions in the left panel, request the refreshing or the refinement of a (set of) suggestion(s).
+
 
 ## Content of the Repository
 
